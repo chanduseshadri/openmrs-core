@@ -834,6 +834,9 @@ fieldset {
 	#alertBar img {
 		vertical-align: middle;
 	}
+	#alertBar a {
+		float: right;
+	}
 .markAlertRead, .markAlertRead:link, .markAlertRead:visited {
 	float: right;
 	padding: 0 3px 0 3px;
@@ -1050,6 +1053,12 @@ table#obs td.obsValue {
 	.listItemChecked { 
 		background-color: #8FABC7;
 		color: white;
+	}
+	
+	.listItemSelectAll { 
+		background-color: #EFEFEF;
+		float: none;
+		margin: 5px 0 0;
 	}
 	
 .instructions {

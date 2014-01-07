@@ -2,7 +2,7 @@
    <parent>
       <groupId>org.openmrs</groupId>
       <artifactId>openmrs</artifactId>
-      <version>1.10.0-SNAPSHOT</version>
+      <version>1.11.0-SNAPSHOT</version>
    </parent>
    <modelVersion>4.0.0</modelVersion>
    <groupId>org.openmrs.web</groupId>
@@ -215,7 +215,7 @@
                 <dependency>
                     <groupId>mysql</groupId>
                     <artifactId>mysql-connector-java</artifactId>
-                    <version>5.1.8</version>
+                    <version>5.1.28</version>
                     <scope>runtime</scope>
                 </dependency>
 

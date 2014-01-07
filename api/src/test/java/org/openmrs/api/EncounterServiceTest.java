@@ -948,42 +948,6 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 	}
 	
 	/**
-	 * There should be two encounters in the system with the name "Test Enc Type A" and one should
-	 * be retired and one not. Only the non retired one should be returned here
-	 * 
-	 * @see {@link EncounterService#getEncounterType(String)}
-	 */
-	@Test
-	@Verifies(value = "should not get retired types", method = "getEncounterType(String)")
-	public void getEncounterType_shouldNotGetRetiredTypes() throws Exception {
-		EncounterService encounterService = Context.getEncounterService();
-		
-		// loop over retired and nonretired types to make sure
-		// that there are two "Test Enc Type A" types (one retired, one not)
-		boolean foundRetired = false;
-		boolean foundNonRetired = false;
-		int countOfTestEncType2s = 0;
-		for (EncounterType encType : encounterService.getAllEncounterTypes(true)) {
-			if (encType.getName().equals("Test Enc Type A")) {
-				countOfTestEncType2s++;
-				if (encType.isRetired())
-					foundRetired = true;
-				else
-					foundNonRetired = true;
-			}
-		}
-		// check that both were set to true
-		assertEquals("We are only expecting to have two types: one retired, one not", 2, countOfTestEncType2s);
-		assertTrue("No retired type was found in the db", foundRetired);
-		assertTrue("No non-retired type was found in the db", foundNonRetired);
-		
-		// we should not get two types here, the second one is retired
-		EncounterType type = encounterService.getEncounterType("Test Enc Type A");
-		assertEquals(2, type.getEncounterTypeId().intValue());
-		assertFalse(type.isRetired());
-	}
-	
-	/**
 	 * Make sure that the "Some Retired Type" type is not returned because it is retired in
 	 * {@link EncounterService#getEncounterType(String)}
 	 * 
@@ -1144,13 +1108,9 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 		
 		// make sure the order is id 2, 3, 1
 		assertEquals(2, types.get(0).getEncounterTypeId().intValue());
-		assertEquals(3, types.get(1).getEncounterTypeId().intValue());
-		assertEquals(1, types.get(2).getEncounterTypeId().intValue());
+		assertEquals(1, types.get(1).getEncounterTypeId().intValue());
+		assertEquals(3, types.get(2).getEncounterTypeId().intValue());
 		
-		// this test expects that id #2 and id #3 have the same name and that
-		// id #3 is retired
-		assertEquals(types.get(0).getName(), types.get(1).getName());
-		assertTrue(types.get(1).isRetired());
 	}
 	
 	/**
@@ -1538,6 +1498,25 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 		assertNotNull("valid uuid should be returned", encounterRole);
 		encounterRole = encounterService.getEncounterRoleByUuid("invaid uuid");
 		assertNull("returns null for invalid uuid", encounterRole);
+	}
+	
+	/**
+	 * @see {@link EncounterService#getEncounterRoleByName(String)}
+	 */
+	@Test
+	@Verifies(value = "find encounter role based on its name", method = "getEncounterRoleByName(String)")
+	public void getEncounterRoleByName_shouldFindEncounterRoleByName() throws Exception {
+		EncounterService encounterService = Context.getEncounterService();
+		EncounterRole encounterRole = new EncounterRole();
+		String name = "surgeon role";
+		encounterRole.setDescription("The surgeon");
+		encounterRole.setName(name);
+		encounterRole = encounterService.saveEncounterRole(encounterRole);
+		
+		EncounterRole retrievedEncounterRole = encounterService.getEncounterRoleByName(name);
+		assertNotNull("valid EncounterRole object should be returned", retrievedEncounterRole);
+		assertEquals(encounterRole.getUuid(), retrievedEncounterRole.getUuid());
+		
 	}
 	
 	/**
@@ -2460,7 +2439,6 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 	
 	/**
 	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
-	 * 
 	 */
 	@Test
 	@Verifies(value = "should fetch encounters by patient id", method = "getEncounters(String,Integer,Integer,Integer,null)")
@@ -2521,7 +2499,6 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 	
 	/**
 	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
-	 * 
 	 */
 	@Test
 	@Verifies(value = "should match on the encounter type name", method = "getEncounters(String,Integer,Integer,Integer,null)")
@@ -2531,7 +2508,6 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 	
 	/**
 	 * @see {@link EncounterService#getEncounters(String,Integer,Integer,Integer,null)}
-	 * 
 	 */
 	@Test
 	@Verifies(value = "should match on the form name", method = "getEncounters(String,Integer,Integer,Integer,null)")
@@ -2540,8 +2516,8 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 	}
 	
 	/**
-	 * @see {@link EncounterService#saveEncounterType(EncounterType)}}
-	 * @see {@link EncounterService#checkIfEncounterTypesAreLocked()}}
+	 * @see {@link EncounterService#saveEncounterType(EncounterType)}
+	 * @see {@link EncounterService#checkIfEncounterTypesAreLocked()}
 	 */
 	@Test(expected = EncounterTypeLockedException.class)
 	@Verifies(value = "should throw error when trying to save encounter type when encounter types are locked", method = "saveEncounterType(EncounterType)")
@@ -2560,7 +2536,7 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 	}
 	
 	/**
-	 * @see {@link EncounterService#retireEncounterType(EncounterType, String)}}
+	 * @see {@link EncounterService#retireEncounterType(EncounterType, String)}
 	 */
 	@Test(expected = EncounterTypeLockedException.class)
 	@Verifies(value = "should throw error when trying to retire encounter type when encounter types are locked", method = "retireEncounterType(EncounterType, String)")
@@ -2578,7 +2554,7 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 	}
 	
 	/**
-	 * @see {@link EncounterService#unretireEncounterType(EncounterType)}}
+	 * @see {@link EncounterService#unretireEncounterType(EncounterType)}
 	 */
 	@Test(expected = EncounterTypeLockedException.class)
 	@Verifies(value = "should throw error when trying to unretire encounter type when encounter types are locked", method = "unretireEncounterType(EncounterType)")
@@ -2595,7 +2571,7 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 	}
 	
 	/**
-	 * @see {@link EncounterService#purgeEncounterType(EncounterType)}}
+	 * @see {@link EncounterService#purgeEncounterType(EncounterType)}
 	 */
 	@Test(expected = EncounterTypeLockedException.class)
 	@Verifies(value = "should throw error when trying to delete encounter type when encounter types are locked", method = "purgeEncounterType(EncounterType)")
@@ -2611,5 +2587,18 @@ public class EncounterServiceTest extends BaseContextSensitiveTest {
 		Context.getAdministrationService().saveGlobalProperty(gp);
 		
 		encounterService.purgeEncounterType(encounterType);
+	}
+	
+	@Test
+	@Verifies(value = "find encounter roles based on their name", method = "getEncounterRolesByName(String)")
+	public void getEncounterRolesByName_shouldFindEncounterRolesByName() throws Exception {
+		EncounterService encounterService = Context.getEncounterService();
+		String name = "surgeon";
+		
+		List<EncounterRole> encounterRoles = encounterService.getEncounterRolesByName(name);
+		
+		assertNotNull("valid EncounterROle object should be returned", encounterRoles);
+		assertEquals(encounterRoles.size(), 1);
+		assertEquals(encounterRoles.get(0).getName(), name);
 	}
 }

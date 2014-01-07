@@ -1529,9 +1529,16 @@ public class PatientServiceImpl extends BaseOpenmrsService implements PatientSer
 	 */
 	public PatientIdentifier savePatientIdentifier(PatientIdentifier patientIdentifier) throws APIException {
 		//if the argument or the following required fields are not specified
-		if (patientIdentifier == null || patientIdentifier.getPatient() == null
-		        || patientIdentifier.getIdentifierType() == null || patientIdentifier.getLocation() == null
-		        || StringUtils.isBlank(patientIdentifier.getIdentifier()))
+		PatientIdentifierType.LocationBehavior locationBehavior = null;
+		if (patientIdentifier != null) {
+			locationBehavior = patientIdentifier.getIdentifierType().getLocationBehavior();
+		}
+		
+		if (patientIdentifier == null
+		        || patientIdentifier.getPatient() == null
+		        || patientIdentifier.getIdentifierType() == null
+		        || StringUtils.isBlank(patientIdentifier.getIdentifier())
+		        || (locationBehavior == PatientIdentifierType.LocationBehavior.REQUIRED && patientIdentifier.getLocation() == null))
 			throw new APIException("PatientIdentifier argument or one of its required fields is null or invalid");
 		if (patientIdentifier.getPatientIdentifierId() == null) {
 			Context.requirePrivilege(PrivilegeConstants.ADD_PATIENT_IDENTIFIERS);
@@ -1647,26 +1654,6 @@ public class PatientServiceImpl extends BaseOpenmrsService implements PatientSer
 			return count;
 		List<PatientIdentifierType> emptyList = new Vector<PatientIdentifierType>();
 		return OpenmrsUtil.convertToInteger(dao.getCountOfPatients(null, query, emptyList, false, true));
-	}
-	
-	/**
-	 * Method returns the minimum number of search characters
-	 * 
-	 * @return the value of min search characters
-	 */
-	private int getMinSearchCharacters() {
-		int minSearchCharacters = OpenmrsConstants.GLOBAL_PROPERTY_DEFAULT_MIN_SEARCH_CHARACTERS;
-		String minSearchCharactersStr = Context.getAdministrationService().getGlobalProperty(
-		    OpenmrsConstants.GLOBAL_PROPERTY_MIN_SEARCH_CHARACTERS);
-		
-		try {
-			minSearchCharacters = Integer.valueOf(minSearchCharactersStr);
-		}
-		catch (NumberFormatException e) {
-			//do nothing
-		}
-		
-		return minSearchCharacters;
 	}
 	
 	/**

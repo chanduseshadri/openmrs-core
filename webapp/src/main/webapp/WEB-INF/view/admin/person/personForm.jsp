@@ -252,7 +252,7 @@
 	<div id="personFormVoided" class="retiredMessage">
 	<div><openmrs:message code="Person.voidedMessage"/></div>
     <div>
-    	<c:if test="${person.personVoidedBy.personName != null}"><openmrs:message code="general.byPerson"/> ${person.personVoidedBy.personName}</c:if> 
+    	<c:if test="${person.personVoidedBy.personName != null}"><openmrs:message code="general.byPerson"/> <c:out value="${person.personVoidedBy.personName}" /></c:if>
     	<c:if test="${person.personDateVoided != null}"> <openmrs:message code="general.onDate"/> <openmrs:formatDate date="${person.personDateVoided}" type="long" /> </c:if> 
    		<c:if test="${person.personVoidReason != ''}"> - ${person.personVoidReason} </c:if>
     </div>
@@ -263,7 +263,7 @@
 </openmrs:hasPrivilege>
 
 <spring:hasBindErrors name="person">
-	<openmrs:message code="fix.error"/>
+	<openmrs:message htmlEscape="false" code="fix.error"/>
 	<div class="error">
 		<c:forEach items="${errors.allErrors}" var="error">
 			<openmrs:message code="${error.code}" text="${error.code}" arguments="${error.arguments}"/><br/><!-- ${fn:replace(error, '--', '\\-\\-')} -->
@@ -280,7 +280,7 @@
 		<div id="pNames">
 			<div class="tabBar" id="pNameTabBar">
 				<c:forEach var="name" items="${person.names}" varStatus="varStatus">
-					<a href="javascript:return false;" onClick="return selectTab(this, 'name');" id="name${varStatus.index}" <c:if test="${name.voided}">class='voided'</c:if>><span>${name.givenName}</span>&nbsp;<span>${name.familyName}</span></a>
+					<a href="javascript:return false;" onClick="return selectTab(this, 'name');" id="name${varStatus.index}" <c:if test="${name.voided}">class='voided'</c:if>><span><c:out value="${name.givenName}" /></span>&nbsp;<span><c:out value="${name.familyName}" /></span></a>
 				</c:forEach>
 				<a href="javascript:return false;" onClick="return selectTab(this, 'name');" id="nameTab" style="display: none"><span></span>&nbsp;<span></span></a>
 				<input type="button" onClick="return addNew('name');" class="addNew" id="name" value='<openmrs:message code="Person.addNewName"/>'/>
@@ -362,7 +362,7 @@
 		<span style="position: relative">
 			<input type="button" id="deletePersonButton" value="<openmrs:message code="Person.delete"/>" onClick="showDiv('deletePersonDiv'); hideDiv('deletePersonButton')"/>
 			<div id="deletePersonDiv" style="position: absolute; padding: 1em; bottom: 0px; left: 0px; z-index: 9; width: 350px; border: 1px black solid; background-color: #ffff88; display: none">
-				<openmrs:message code="Person.delete.warningMessage"/>
+				<openmrs:message htmlEscape="false" code="Person.delete.warningMessage"/>
 				<br/><br/>
 				<div align="center">
 					<input type="submit" name="action" value="<openmrs:message code="Person.delete"/>" onclick="return confirm('<openmrs:message code="Person.delete.finalWarning"/>')"/>

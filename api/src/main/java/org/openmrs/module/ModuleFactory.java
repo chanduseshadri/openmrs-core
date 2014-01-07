@@ -24,9 +24,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.Vector;
 import java.util.WeakHashMap;
@@ -74,6 +76,8 @@ public class ModuleFactory {
 	private static final String MODULE_CHANGELOG_FILENAME = "liquibase.xml";
 	
 	private static final Map<String, DaemonToken> daemonTokens = new WeakHashMap<String, DaemonToken>();
+	
+	private static Set<String> actualStartupOrder;
 	
 	/**
 	 * Add a module (in the form of a jar file) to the list of openmrs modules Returns null if an
@@ -187,6 +191,7 @@ public class ModuleFactory {
 	 * Modules that are already started will be skipped.
 	 */
 	public static void startModules() {
+		
 		// loop over and try starting each of the loaded modules
 		if (getLoadedModules().size() > 0) {
 			List<Module> leftoverModules = new Vector<Module>();
@@ -280,9 +285,7 @@ public class ModuleFactory {
 			// if we failed to start all the modules, error out
 			if (leftoverModules.size() > 0)
 				for (Module leftoverModule : leftoverModules) {
-					String message = "Unable to start module '" + leftoverModule.getName()
-					        + "'.  All required modules are not available: "
-					        + OpenmrsUtil.join(getMissingRequiredModules(leftoverModule), ", ");
+					String message = getFailedToStartModuleMessage(leftoverModule);
 					log.error(message);
 					leftoverModule.setStartupErrorMessage(message);
 					notifySuperUsersAboutModuleFailure(leftoverModule);
@@ -300,7 +303,7 @@ public class ModuleFactory {
 		try {
 			// Add the privileges necessary for notifySuperUsers
 			Context.addProxyPrivilege(PrivilegeConstants.MANAGE_ALERTS);
-			Context.addProxyPrivilege(PrivilegeConstants.VIEW_USERS);
+			Context.addProxyPrivilege(PrivilegeConstants.GET_USERS);
 			
 			// Send an alert to all administrators
 			Context.getAlertService().notifySuperUsers("Module.startupError.notification.message", null, mod.getName());
@@ -310,7 +313,7 @@ public class ModuleFactory {
 		}
 		finally {
 			// Remove added privileges
-			Context.removeProxyPrivilege(PrivilegeConstants.VIEW_USERS);
+			Context.removeProxyPrivilege(PrivilegeConstants.GET_USERS);
 			Context.removeProxyPrivilege(PrivilegeConstants.MANAGE_ALERTS);
 		}
 	}
@@ -404,6 +407,18 @@ public class ModuleFactory {
 		return Collections.emptyList();
 	}
 	
+	public static List<Module> getStartedModulesInOrder() {
+		List<Module> modules = new ArrayList<Module>();
+		if (actualStartupOrder != null) {
+			for (String moduleId : actualStartupOrder) {
+				modules.add(getStartedModulesMap().get(moduleId));
+			}
+		} else {
+			modules.addAll(getStartedModules());
+		}
+		return modules;
+	}
+	
 	/**
 	 * Returns the modules that have been successfully started in the form of a map&lt;ModuleId,
 	 * Module&gt;
@@ -431,7 +446,7 @@ public class ModuleFactory {
 			module = new ModuleFileParser(moduleFile).parse();
 		}
 		catch (ModuleException e) {
-			log.error("Error getting module object from file", e);
+			log.error("Error getting module object from file " + moduleFile.getName(), e);
 			throw e;
 		}
 		
@@ -542,10 +557,7 @@ public class ModuleFactory {
 				
 				// check for required modules
 				if (!requiredModulesStarted(module)) {
-					throw new ModuleException("Module " + module.getName()
-					        + " cannot be added because it requires the following module(s): "
-					        + OpenmrsUtil.join(getMissingRequiredModules(module), ", ")
-					        + ". Please add and start these modules first.");
+					throw new ModuleException(getFailedToStartModuleMessage(module));
 				}
 				
 				// fire up the classloader for this module
@@ -629,6 +641,10 @@ public class ModuleFactory {
 				
 				// effectively mark this module as started successfully
 				getStartedModulesMap().put(moduleId, module);
+				if (actualStartupOrder == null) {
+					actualStartupOrder = new LinkedHashSet<String>();
+				}
+				actualStartupOrder.add(moduleId);
 				
 				try {
 					// save the state of this module for future restarts
@@ -707,6 +723,18 @@ public class ModuleFactory {
 			ModuleUtil.refreshApplicationContext(applicationContext, isOpenmrsStartup, module);
 		
 		return module;
+	}
+	
+	/**
+	 * Gets the error message of a module which fails to start.
+	 * 
+	 * @param module the module that has failed to start.
+	 * @return the message text.
+	 */
+	private static String getFailedToStartModuleMessage(Module module) {
+		String[] params = { module.getName(), OpenmrsUtil.join(getMissingRequiredModules(module), ", ") };
+		return Context.getMessageSourceService().getMessage("Module.error.moduleCannotBeStarted", params,
+		    Context.getLocale());
 	}
 	
 	/**
@@ -942,6 +970,12 @@ public class ModuleFactory {
 			}
 			
 			getStartedModulesMap().remove(moduleId);
+			if (actualStartupOrder != null) {
+				actualStartupOrder.remove(moduleId);
+				for (Module depModule : dependentModulesStopped) {
+					actualStartupOrder.remove(depModule.getModuleId());
+				}
+			}
 			
 			if (skipOverStartedProperty == false && !Context.isRefreshingContext()) {
 				saveGlobalProperty(moduleId + ".started", "false", getGlobalPropertyStartedDescription(moduleId));

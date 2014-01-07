@@ -22,7 +22,7 @@
 <openmrs:extensionPoint pointId="org.openmrs.admin.encounters.encounterForm.belowTitle" type="html" parameters="encounterTypeId=${encounterType.encounterTypeId}" />
 
 <spring:hasBindErrors name="encounterType">
-	<openmrs:message code="fix.error"/>
+	<openmrs:message htmlEscape="false" code="fix.error"/>
 	<br />
 </spring:hasBindErrors>
 <form method="post">
@@ -80,7 +80,7 @@
 		<tr>
 			<td><openmrs:message code="general.createdBy" /></td>
 			<td>
-				${encounterType.creator.personName} -
+				<c:out value="${encounterType.creator.personName}" /> -
 				<openmrs:formatDate date="${encounterType.dateCreated}" type="long" />
 			</td>
 		</tr>
